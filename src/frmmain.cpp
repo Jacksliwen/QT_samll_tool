@@ -73,7 +73,7 @@ void frmMain::initStyle()
     manager_ = new QNetworkAccessManager();
     ui->treeWidget_nodes->setMouseTracking(true);
     ui->treeWidget_nodes->setHeaderLabel("节点信息");
-
+    QT_LOG::outedit = ui->textEdit_conusl_log;
     //初始化日志
     QT_LOG::logInit("log/smalltool.log");
 
@@ -182,7 +182,6 @@ void frmMain::GetSuccessResp(const QString& resp)
         QEventLoop loop_;
         connect(reply, &QNetworkReply::finished,&loop_, &QEventLoop::quit);
         loop_.exec();
-        qDebug() <<request.url().url() << "  Resp: " <<  reply->error();
 
         QJsonDocument jsonDocument1 = QJsonDocument::fromJson(reply->readAll());
         for(auto each_iter : jsonDocument1.object()){
@@ -219,7 +218,6 @@ void frmMain::on_button_consul_search_clicked()
         QNetworkReply* reply = manager_->get(request);
         connect(reply, &QNetworkReply::finished,&loop_, &QEventLoop::quit);
         loop_.exec();
-        qDebug() <<request.url().url() << "  Resp: " <<  reply->error();
 
         if(reply->error() != QNetworkReply::NoError){
             ui->textEdit_conusl_log->append("请填写Consul Addr");
@@ -247,7 +245,6 @@ void frmMain::on_button_deregiest_selected_clicked()
                 QNetworkReply* reply = manager_->put(request,putData);//发送put请求
                 connect(reply, &QNetworkReply::finished,&loop_, &QEventLoop::quit);
                 loop_.exec();
-                qDebug() <<request.url().url() << "  Resp: " <<  reply->error();
                 reply->deleteLater();
             }
         }
