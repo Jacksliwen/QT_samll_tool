@@ -1,5 +1,5 @@
 ﻿#include "videowidget.h"
-
+#include <iostream>
 VlcThread::VlcThread(QObject *parent) : QThread(parent)
 {
     setObjectName("VlcThread");
@@ -46,6 +46,44 @@ void VlcThread::setOption(const QString &option)
         libvlc_media_add_option(vlcMedia, arg);
     }
 }
+struct Context {
+    QMutex mutex;
+    uchar *pixels;
+    VideoWidget *w;
+};
+
+static void * lock(void *opaque, void **planes)
+{
+    struct Context *ctx = static_cast<Context *>(opaque);
+    ctx->mutex.lock();
+
+    // 告诉 VLC 将解码的数据放到缓冲区中
+    *planes = ctx->pixels;
+    return nullptr;
+}
+
+// 获取 argb 图片并保存到文件中
+static void unlock(void *opaque, void *picture, void *const *planes)
+{
+    Q_UNUSED(picture);
+
+    struct Context *ctx = static_cast<Context *>(opaque);
+    unsigned char *data = static_cast<unsigned char *>(*planes);
+    static int frameCount = 1;
+
+    QImage image(data, ctx->w->width(), ctx->w->height(), QImage::Format_ARGB32);
+    ctx->w->setBgImage(image);
+    qDebug() << frameCount << "    frameCount ";
+    //    image.save(QString("frame_%1.png").arg(frameCount++));
+    ctx->mutex.unlock();
+}
+
+static void display(void *opaque, void *picture)
+{
+    Q_UNUSED(picture);
+
+    (void)opaque;
+}
 
 bool VlcThread::init()
 {
@@ -64,13 +102,20 @@ bool VlcThread::init()
 
     //设置播放句柄
     VideoWidget *w = (VideoWidget *)this->parent();
-#if defined(Q_OS_WIN)
-    libvlc_media_player_set_hwnd(vlcPlayer, (void *)w->winId());
-#elif defined(Q_OS_LINUX)
-    libvlc_media_player_set_xwindow(vlcPlayer, w->winId());
-#elif defined(Q_OS_MAC)
-    libvlc_media_player_set_nsobject(vlcPlayer, (void *)w->winId());
-#endif
+
+    struct Context ctx;
+    ctx.pixels = new uchar[w->width() * w->height() * 4];
+    memset(ctx.pixels, 0, w->width() * w->height() * 4);
+    ctx.w = w;
+    libvlc_video_set_callbacks(vlcPlayer, lock, unlock,display, &ctx);
+    libvlc_video_set_format(vlcPlayer, "RGBA", w->width(), w->height(), w->width() * 4);
+//#if defined(Q_OS_WIN)
+//    libvlc_media_player_set_hwnd(vlcPlayer, (void *)w->winId());
+//#elif defined(Q_OS_LINUX)
+//    libvlc_media_player_set_xwindow(vlcPlayer, w->winId());
+//#elif defined(Q_OS_MAC)
+//    libvlc_media_player_set_nsobject(vlcPlayer, (void *)w->winId());
+//#endif
 
     //设置硬件加速 none auto any d3d11va dxva2
     setOption(QString(":avcodec-hw=%1").arg("none"));
@@ -923,7 +968,7 @@ void VideoWidget::setBgText(const QString &bgText)
 
 void VideoWidget::setBgImage(const QImage &bgImage)
 {
-    this->bgImage = bgImage;
+    this->image = bgImage;
     this->update();
 }
 

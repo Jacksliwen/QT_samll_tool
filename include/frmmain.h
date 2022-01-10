@@ -7,6 +7,7 @@
 #include <QNetworkRequest>
 #include <QNetworkAccessManager>
 #include <qeventloop.h>
+#include <memory>
 namespace Ui
 {
 class frmMain;
@@ -24,7 +25,7 @@ private:
     Ui::frmMain *ui;
     QNetworkAccessManager *manager_;
     QEventLoop loop_;
-
+    std::shared_ptr<QPixmap> pix_image_;
 private slots:
     void initForm();
     void initStyle();

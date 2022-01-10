@@ -115,8 +115,8 @@ void frmMain::on_base_button_choose_clicked()
     QString fileName = QFileDialog::getOpenFileName(this, "选择文件", "", "图片(*.png *.jpeg *.bmp *.jpg)");
     if (!fileName.isEmpty()) {
         ui->base_text_file->setText(fileName);
-        QPixmap pix(fileName);
-        pix = pix.scaled(ui->base_image->size() - QSize(4, 4), Qt::KeepAspectRatio);
+        pix_image_ = std::make_shared<QPixmap>(fileName);
+       auto  pix = pix_image_->scaled(ui->base_image->size() - QSize(4, 4), Qt::KeepAspectRatio);
         ui->base_image->setPixmap(pix);
     }
 
@@ -135,8 +135,8 @@ void frmMain::on_base_button_base2pic_clicked()
 {
     QString text = ui->base_ret->toPlainText().trimmed();
     if (!text.isEmpty()) {
-        QPixmap pix = QPixmap::fromImage(Base64::base64ToImage(text));
-        pix = pix.scaled(ui->base_image->size() - QSize(4, 4), Qt::KeepAspectRatio);
+        pix_image_ = std::make_shared<QPixmap>(QPixmap::fromImage(Base64::base64ToImage(text)));
+        auto pix = pix_image_->scaled(ui->base_image->size() - QSize(4, 4), Qt::KeepAspectRatio);
         ui->base_image->setPixmap(pix);
     }
 
@@ -148,6 +148,7 @@ void frmMain::on_base_button_clear_clicked()
     ui->base_text_file->clear();
     ui->base_ret->clear();
     ui->base_image->clear();
+    pix_image_.reset();
 
 }
 
@@ -155,9 +156,7 @@ void frmMain::on_base_button_download_clicked()
 {
     QString fileName = QFileDialog::getSaveFileName(this, "保存文件", "", "图片(*.png *.jpeg *.bmp *.jpg)");
     if (!fileName.isEmpty()) {
-        QPixmap p = ui->base_image->grab(ui->base_image->rect());
-        QImage img = p.toImage();
-        img.save(fileName);
+        pix_image_->toImage().save(fileName);
     }
 
 }

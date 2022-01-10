@@ -40,7 +40,6 @@ public slots:
     //设置视频流地址
     void setUrl(const QString &url);
     void setOption(const QString &option);
-
     //初始化视频对象
     bool init();
     //播放视频对象
@@ -264,6 +263,7 @@ private slots:
     void btnClicked();
 
     void mouseDoubleClickEvent(QMouseEvent *event);
+
 signals:
     //播放成功
     void receivePlayStart();
